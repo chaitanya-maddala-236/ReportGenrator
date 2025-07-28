@@ -277,62 +277,290 @@ Message is: 1010111</div>
     
     <p><strong>Note:</strong> If all zeroes are obtained as the remainder, then there is no error during transmission. If the remainder is not 0, then there is some error in transmission.</p>
     
-    <h3>CRC Encoding (Complete Python Code)</h3>
-    <div class="code-block"># CRC Encoding Program
-def crc_encoding():
-    print("=== CRC ENCODING ===")
-    
-    # Get input from user
-    data = input("Enter the dataword: ")
-    generator = input("Enter generator: ")
-    
-    print(f"\\nOriginal Data: {data}")
-    print(f"Generator Polynomial: {generator}")
-    
-    # Calculate the number of zeros to append
-    n = len(generator)
-    data_padded = data + '0' * (n - 1)
-    print(f"Data after padding with {n-1} zeros: {data_padded}")
-    
-    # CRC Division Function
-    def crc_division(dividend, divisor):
-        result = list(dividend)
-        
-        print(f"\\nPerforming binary division:")
-        print(f"Dividend: {dividend}")
-        print(f"Divisor: {divisor}")
-        print("\\nDivision Steps:")
-        
-        for i in range(len(dividend) - len(divisor) + 1):
-            if result[i] == '1':
-                print(f"Step {i+1}: XOR at position {i}")
-                for j in range(len(divisor)):
-                    old_bit = result[i + j]
-                    result[i + j] = str(int(result[i + j]) ^ int(divisor[j]))
-                    print(f"  {old_bit} XOR {divisor[j]} = {result[i + j]}")
-                print(f"  Result after XOR: {''.join(result)}")
-        
-        remainder = ''.join(result[-(len(divisor) - 1):])
-        print(f"\\nFinal Remainder (CRC): {remainder}")
-        return remainder
-    
-    # Get CRC bits
-    crc_bits = crc_division(data_padded, generator)
-    
-    # Create encoded message
-    encoded_message = data + crc_bits
-    
-    print(f"\\n=== RESULT ===")
-    print(f"Original Data: {data}")
-    print(f"CRC Bits: {crc_bits}")
-    print(f"Encoded Message: {encoded_message}")
-    print(f"Message is: {encoded_message}")
-    
-    return encoded_message
+    <h3>Complete CRC Program (Python Code)</h3>
+    <div class="code-block">#!/usr/bin/env python3
+"""
+CRC (Cyclic Redundancy Check) Implementation
+Name: Chaitanya
+Roll No: 24075A7206
+Week: 2
+Date: 28/07/2025
 
-# Main execution
+This program implements CRC encoding and decoding for error detection
+in data transmission using polynomial division and XOR operations.
+"""
+
+def display_header():
+    """Display program header"""
+    print("=" * 60)
+    print("    CYCLIC REDUNDANCY CHECK (CRC) IMPLEMENTATION")
+    print("    Name: Chaitanya")
+    print("    Roll No: 24075A7206")
+    print("    Week: 2")
+    print("=" * 60)
+
+def get_user_input():
+    """Get data and generator polynomial from user"""
+    print("\\n--- INPUT SECTION ---")
+    data = input("Enter the dataword (binary): ")
+    generator = input("Enter generator polynomial (binary): ")
+    
+    # Validate input
+    if not all(bit in '01' for bit in data):
+        raise ValueError("Dataword must contain only 0s and 1s")
+    if not all(bit in '01' for bit in generator):
+        raise ValueError("Generator must contain only 0s and 1s")
+    if len(generator) < 2:
+        raise ValueError("Generator must be at least 2 bits long")
+    
+    return data, generator
+
+def perform_xor(a, b):
+    """Perform XOR operation on two binary strings of equal length"""
+    result = ""
+    for i in range(len(b)):
+        if a[i] == b[i]:
+            result += "0"
+        else:
+            result += "1"
+    return result
+
+def crc_division(dividend, divisor, show_steps=True):
+    """
+    Perform CRC division using binary polynomial division
+    Returns the remainder (CRC bits)
+    """
+    if show_steps:
+        print(f"\\n--- BINARY DIVISION PROCESS ---")
+        print(f"Dividend: {dividend}")
+        print(f"Divisor:  {divisor}")
+        print(f"Length of dividend: {len(dividend)}")
+        print(f"Length of divisor: {len(divisor)}")
+        print("\\nStep-by-step division:")
+    
+    # Convert to list for easier manipulation
+    temp_dividend = list(dividend)
+    divisor_len = len(divisor)
+    
+    step = 1
+    for i in range(len(dividend) - divisor_len + 1):
+        if show_steps:
+            print(f"\\nStep {step}:")
+            print(f"  Current dividend: {''.join(temp_dividend)}")
+            print(f"  Position: {i}")
+        
+        # Check if we can divide (first bit is 1)
+        if temp_dividend[i] == '1':
+            if show_steps:
+                print(f"  First bit is 1, performing XOR with divisor")
+                print(f"  Bits to XOR: {''.join(temp_dividend[i:i+divisor_len])}")
+                print(f"  Divisor:      {divisor}")
+            
+            # Perform XOR operation
+            for j in range(divisor_len):
+                if temp_dividend[i + j] == divisor[j]:
+                    temp_dividend[i + j] = '0'
+                else:
+                    temp_dividend[i + j] = '1'
+            
+            if show_steps:
+                print(f"  After XOR:    {''.join(temp_dividend[i:i+divisor_len])}")
+                print(f"  Result:       {''.join(temp_dividend)}")
+        else:
+            if show_steps:
+                print(f"  First bit is 0, no XOR needed")
+        
+        step += 1
+    
+    # Extract remainder
+    remainder = ''.join(temp_dividend[-(divisor_len - 1):])
+    
+    if show_steps:
+        print(f"\\n--- DIVISION COMPLETE ---")
+        print(f"Final remainder (CRC): {remainder}")
+        print(f"Length of CRC: {len(remainder)} bits")
+    
+    return remainder
+
+def crc_encoding():
+    """CRC Encoding Process"""
+    print("\\n" + "=" * 50)
+    print("           CRC ENCODING PROCESS")
+    print("=" * 50)
+    
+    try:
+        # Get input
+        data, generator = get_user_input()
+        
+        print(f"\\n--- ENCODING PARAMETERS ---")
+        print(f"Original data: {data}")
+        print(f"Generator:     {generator}")
+        print(f"Data length:   {len(data)} bits")
+        print(f"Generator length: {len(generator)} bits")
+        
+        # Append zeros equal to (generator length - 1)
+        zeros_to_append = len(generator) - 1
+        padded_data = data + '0' * zeros_to_append
+        
+        print(f"\\n--- PADDING PROCESS ---")
+        print(f"Zeros to append: {zeros_to_append}")
+        print(f"Padded data: {padded_data}")
+        print(f"Padded data length: {len(padded_data)} bits")
+        
+        # Perform CRC division
+        crc_bits = crc_division(padded_data, generator, show_steps=True)
+        
+        # Create final encoded message
+        encoded_message = data + crc_bits
+        
+        print(f"\\n--- ENCODING RESULT ---")
+        print(f"Original data:    {data}")
+        print(f"CRC bits:         {crc_bits}")
+        print(f"Encoded message:  {encoded_message}")
+        print(f"Total length:     {len(encoded_message)} bits")
+        print(f"\\nMessage is: {encoded_message}")
+        
+        return encoded_message, generator
+        
+    except ValueError as e:
+        print(f"Error: {e}")
+        return None, None
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return None, None
+
+def crc_decoding():
+    """CRC Decoding Process"""
+    print("\\n" + "=" * 50)
+    print("           CRC DECODING PROCESS")
+    print("=" * 50)
+    
+    try:
+        print("\\n--- INPUT SECTION ---")
+        received_message = input("Enter the received message (binary): ")
+        generator = input("Enter generator polynomial (binary): ")
+        
+        # Validate input
+        if not all(bit in '01' for bit in received_message):
+            raise ValueError("Received message must contain only 0s and 1s")
+        if not all(bit in '01' for bit in generator):
+            raise ValueError("Generator must contain only 0s and 1s")
+        
+        print(f"\\n--- DECODING PARAMETERS ---")
+        print(f"Received message: {received_message}")
+        print(f"Generator:        {generator}")
+        print(f"Message length:   {len(received_message)} bits")
+        print(f"Generator length: {len(generator)} bits")
+        
+        # Perform CRC division on received message
+        remainder = crc_division(received_message, generator, show_steps=True)
+        
+        # Check if remainder is all zeros
+        is_error_free = all(bit == '0' for bit in remainder)
+        
+        print(f"\\n--- DECODING RESULT ---")
+        print(f"Remainder: {remainder}")
+        print(f"All zeros? {is_error_free}")
+        
+        if is_error_free:
+            print("\\n✓ MESSAGE IS CORRECT")
+            print("No errors detected in transmission")
+            original_data = received_message[:-(len(generator)-1)]
+            print(f"Original data: {original_data}")
+        else:
+            print("\\n✗ MESSAGE IS NOT CORRECT")
+            print("Errors detected in transmission")
+            print("The received message has been corrupted")
+        
+        return is_error_free
+        
+    except ValueError as e:
+        print(f"Error: {e}")
+        return None
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return None
+
+def demonstrate_crc():
+    """Demonstrate CRC with predefined examples"""
+    print("\\n" + "=" * 50)
+    print("           CRC DEMONSTRATION")
+    print("=" * 50)
+    
+    # Example 1: Basic CRC
+    print("\\n--- EXAMPLE 1 ---")
+    data1 = "1010"
+    gen1 = "1101"
+    print(f"Data: {data1}, Generator: {gen1}")
+    
+    padded1 = data1 + '0' * (len(gen1) - 1)
+    crc1 = crc_division(padded1, gen1, show_steps=False)
+    encoded1 = data1 + crc1
+    print(f"Encoded: {encoded1}")
+    
+    # Verify
+    remainder1 = crc_division(encoded1, gen1, show_steps=False)
+    print(f"Verification remainder: {remainder1}")
+    print(f"Is correct: {all(bit == '0' for bit in remainder1)}")
+    
+    # Example 2: Longer data
+    print("\\n--- EXAMPLE 2 ---")
+    data2 = "110101"
+    gen2 = "10011"
+    print(f"Data: {data2}, Generator: {gen2}")
+    
+    padded2 = data2 + '0' * (len(gen2) - 1)
+    crc2 = crc_division(padded2, gen2, show_steps=False)
+    encoded2 = data2 + crc2
+    print(f"Encoded: {encoded2}")
+    
+    # Verify
+    remainder2 = crc_division(encoded2, gen2, show_steps=False)
+    print(f"Verification remainder: {remainder2}")
+    print(f"Is correct: {all(bit == '0' for bit in remainder2)}")
+
+def main_menu():
+    """Main program menu"""
+    while True:
+        print("\\n" + "=" * 50)
+        print("           CRC PROGRAM MENU")
+        print("=" * 50)
+        print("1. CRC Encoding")
+        print("2. CRC Decoding") 
+        print("3. CRC Demonstration")
+        print("4. Exit")
+        print("-" * 50)
+        
+        try:
+            choice = input("Enter your choice (1-4): ").strip()
+            
+            if choice == '1':
+                crc_encoding()
+            elif choice == '2':
+                crc_decoding()
+            elif choice == '3':
+                demonstrate_crc()
+            elif choice == '4':
+                print("\\nThank you for using CRC Program!")
+                print("Program terminated.")
+                break
+            else:
+                print("\\nInvalid choice! Please enter 1, 2, 3, or 4.")
+                
+        except KeyboardInterrupt:
+            print("\\n\\nProgram interrupted by user.")
+            break
+        except Exception as e:
+            print(f"\\nUnexpected error: {e}")
+
+# Main program execution
 if __name__ == "__main__":
-    crc_encoding()</div>
+    try:
+        display_header()
+        main_menu()
+    except Exception as e:
+        print(f"Fatal error: {e}")
+        print("Program terminated unexpectedly.")</div>
     
     <h4>Complete Output for Encoding:</h4>
     <div class="output-block">=== CRC ENCODING ===
